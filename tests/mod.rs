@@ -2,7 +2,7 @@
 mod tests {
     use Advent_of_code::day2_complete;
     use Advent_of_code::day4_complete;
-    use Advent_of_code::{day1, day3};
+    use Advent_of_code::{day1, day3_complete};
 
     #[test]
     fn dy1() {
@@ -16,7 +16,7 @@ mod tests {
 
     #[test]
     fn dy3() {
-        day3::run();
+        day3_complete::run();
     }
     #[test]
     fn dy4() {
