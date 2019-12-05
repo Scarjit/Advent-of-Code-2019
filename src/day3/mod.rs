@@ -90,8 +90,9 @@ pub fn run() {
 
 
 
-    //let mands = compute(line_one, line_two);
-    //println!("{:?}", mands);
+    let mands = compute(line_one, line_two);
+    println!("{:?}", mands);
+
 }
 
 #[derive(Debug)]
@@ -136,7 +137,7 @@ fn compute(lone: Vec<&str>, ltwo: Vec<&str>) -> (u32, u16) {
 
     //grid_print(&grid);
 
-    println!("CALC MANNHEIM");
+    println!("CALC MANHATTEN");
     let mannheim = calc_mannheim(&grid, start_x, start_y);
 
     println!("CALC STEPS");
@@ -197,13 +198,10 @@ fn apply_grid_i(grid: &mut Vec<Vec<GridPoints>>, id: u8, mut pc: u16, curr_x: u3
     match current {
         GridPoints::CROSS(cid, cross_pc) | GridPoints::INSTRORIGIN(cid, cross_pc) | GridPoints::INSTR(cid, cross_pc) => {
             if cid == id {
-                if cross_pc > pc {
-                    grid[curr_x as usize][curr_y as usize] = GridPoints::CROSS(id, pc);
-                }else if cross_pc < pc {
-                    pc = cross_pc
-                }
+                pc = cross_pc;
+                grid[curr_x as usize][curr_y as usize] = GridPoints::CROSS(id, cross_pc);
             } else {
-                if id == 0{
+                if id == 0 {
                     grid[curr_x as usize][curr_y as usize] = GridPoints::CROSSOTHER(pc, cross_pc);
                 }else{
                     grid[curr_x as usize][curr_y as usize] = GridPoints::CROSSOTHER(cross_pc, pc);
@@ -230,7 +228,7 @@ fn apply_instr(
     let mut pc = 0u16;
 
     for instr in instr_vec {
-        println!("{:?}", instr);
+        //println!("{:?}", instr);
         if ic == 0 {
             grid[curr_x as usize][curr_y as usize] = GridPoints::START;
         } else {
@@ -243,6 +241,7 @@ fn apply_instr(
                     curr_x += 1;
                     apply_grid_i(grid, id, pc, curr_x, curr_y);
                     pc += 1;
+                    ic += 1;
                 }
             }
             Direction::DOWN(v) => {
@@ -250,6 +249,7 @@ fn apply_instr(
                     curr_x -= 1;
                     apply_grid_i(grid, id, pc, curr_x, curr_y);
                     pc += 1;
+                    ic += 1;
                 }
             }
             Direction::LEFT(v) => {
@@ -257,6 +257,7 @@ fn apply_instr(
                     curr_y -= 1;
                     apply_grid_i(grid, id, pc, curr_x, curr_y);
                     pc += 1;
+                    ic += 1;
                 }
             }
             Direction::RIGHT(v) => {
@@ -264,11 +265,13 @@ fn apply_instr(
                     curr_y += 1;
                     apply_grid_i(grid, id, pc, curr_x, curr_y);
                     pc += 1;
+                    ic += 1;
                 }
             }
         }
-        ic += 1;
     }
+
+    println!("IC: {}", &ic);
 }
 
 fn grid_print(grid: &Vec<Vec<GridPoints>>) {
