@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod tests {
-    use Advent_of_code::{day1, day3};
     use Advent_of_code::day2_complete;
     use Advent_of_code::day4_complete;
+    use Advent_of_code::{day1, day3};
 
     #[test]
     fn dy1() {
