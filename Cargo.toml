@@ -9,6 +9,11 @@ edition = "2018"
 [dependencies]
 rayon = "1.2.1"
 
+[profile.test]
+codegen-units = 24
+lto = true
+opt-level = 3
+
 [profile.release]
 codegen-units = 1
 lto = true
