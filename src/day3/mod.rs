@@ -78,15 +78,20 @@ pub fn run() {
         "U98", "R91", "D20", "R16", "D67", "R40", "U7", "R15", "U6", "R7",
     ];
 
-    let length: u32 = compute(test_line_one, test_line_two);
-    println!("{:?}", length);
-    let length: u32 = compute(test_x_line_one, test_x_line_two);
-    println!("{:?}", length);
-    let length: u32 = compute(test_x2_line_one, test_x2_line_two);
-    println!("{:?}", length);
 
-    let length: u32 = compute(line_one, line_two);
-    println!("{:?}", length);
+    let mands = compute(test_line_one, test_line_two);
+    println!("{:?}", mands);
+
+    let mands =  compute(test_x_line_one, test_x_line_two);
+    println!("{:?}", mands);
+
+    let mands = compute(test_x2_line_one, test_x2_line_two);
+    println!("{:?}", mands);
+
+
+
+    //let mands = compute(line_one, line_two);
+    //println!("{:?}", mands);
 }
 
 #[derive(Debug)]
@@ -101,13 +106,13 @@ enum Direction {
 enum GridPoints {
     START,
     EMPTY,
-    CROSS(u8),
-    CROSSOTHER,
-    INSTRORIGIN(u8),
-    INSTR(u8),
+    CROSS(u8, u16),
+    CROSSOTHER(u16, u16),
+    INSTRORIGIN(u8, u16),
+    INSTR(u8, u16),
 }
 
-fn compute(lone: Vec<&str>, ltwo: Vec<&str>) -> u32 {
+fn compute(lone: Vec<&str>, ltwo: Vec<&str>) -> (u32, u16) {
     let instr_vec_one = get_instruction_vector(&lone);
     let instr_vec_two = get_instruction_vector(&ltwo);
 
@@ -118,6 +123,8 @@ fn compute(lone: Vec<&str>, ltwo: Vec<&str>) -> u32 {
         vec![GridPoints::EMPTY; (max_dim.1 + max_dim.3 + 256) as usize];
         (max_dim.0 + max_dim.2 + 256) as usize
     ];
+
+    println!("Created grid");
 
     let start_x = max_dim.3 + 128;
     let start_y = max_dim.2 + 128;
@@ -130,7 +137,32 @@ fn compute(lone: Vec<&str>, ltwo: Vec<&str>) -> u32 {
     //grid_print(&grid);
 
     println!("CALC MANNHEIM");
-    calc_mannheim(&grid, start_x, start_y)
+    let mannheim = calc_mannheim(&grid, start_x, start_y);
+
+    println!("CALC STEPS");
+    let steps = calc_steps(&grid, start_x, start_y);
+
+    (mannheim, steps)
+}
+
+fn calc_steps(grid: &Vec<Vec<GridPoints>>, start_x: u32, start_y: u32) -> u16 {
+    let mut min_steps: u16 = std::u16::MAX;
+
+    for row in grid {
+        for col in row {
+            match col {
+                GridPoints::CROSSOTHER(pc0, pc1) => {
+                    let steps = pc0+1+pc1+1;
+                    if steps < min_steps{
+                        min_steps = steps;
+                    }
+                },
+                _ => {}
+            }
+        }
+    }
+
+    min_steps
 }
 
 fn calc_mannheim(grid: &Vec<Vec<GridPoints>>, start_x: u32, start_y: u32) -> u32 {
@@ -138,23 +170,51 @@ fn calc_mannheim(grid: &Vec<Vec<GridPoints>>, start_x: u32, start_y: u32) -> u32
 
     for row in grid.iter().enumerate() {
         for col in row.1.iter().enumerate() {
-            if col.1 == &GridPoints::CROSSOTHER {
-                let r = row.0 as u32;
-                let c = col.0 as u32;
+            match col.1 {
+                GridPoints::CROSSOTHER(_, _) => {
+                    let r = row.0 as u32;
+                    let c = col.0 as u32;
 
-                let dst_row = (r as i32 - start_x as i32).abs();
-                let dst_col = (c as i32 - start_y as i32).abs();
+                    let dst_row = (r as i32 - start_x as i32).abs();
+                    let dst_col = (c as i32 - start_y as i32).abs();
 
-                let dst = (dst_row + dst_col) as u32;
+                    let dst = (dst_row + dst_col) as u32;
 
-                if dst < min_dist {
-                    min_dist = dst;
-                }
+                    if dst < min_dist {
+                        min_dist = dst;
+                    }
+                },
+                _ => {}
             }
         }
     }
 
     min_dist
+}
+
+fn apply_grid_i(grid: &mut Vec<Vec<GridPoints>>, id: u8, mut pc: u16, curr_x: u32, curr_y: u32){
+    let current = grid[curr_x as usize][curr_y as usize];
+    match current {
+        GridPoints::CROSS(cid, cross_pc) | GridPoints::INSTRORIGIN(cid, cross_pc) | GridPoints::INSTR(cid, cross_pc) => {
+            if cid == id {
+                if cross_pc > pc {
+                    grid[curr_x as usize][curr_y as usize] = GridPoints::CROSS(id, pc);
+                }else if cross_pc < pc {
+                    pc = cross_pc
+                }
+            } else {
+                if id == 0{
+                    grid[curr_x as usize][curr_y as usize] = GridPoints::CROSSOTHER(pc, cross_pc);
+                }else{
+                    grid[curr_x as usize][curr_y as usize] = GridPoints::CROSSOTHER(cross_pc, pc);
+                }
+            }
+        }
+        GridPoints::EMPTY => {
+            grid[curr_x as usize][curr_y as usize] = GridPoints::INSTR(id, pc);
+        }
+        _ => {}
+    }
 }
 
 fn apply_instr(
@@ -167,151 +227,43 @@ fn apply_instr(
     let mut curr_x = start_x.clone();
     let mut curr_y = start_y.clone();
     let mut ic = 0u32;
+    let mut pc = 0u16;
 
     for instr in instr_vec {
         println!("{:?}", instr);
-        //grid_print(&grid);
         if ic == 0 {
             grid[curr_x as usize][curr_y as usize] = GridPoints::START;
         } else {
-            grid[curr_x as usize][curr_y as usize] = GridPoints::INSTRORIGIN(id);
+            grid[curr_x as usize][curr_y as usize] = GridPoints::INSTRORIGIN(id, pc);
         }
 
         match instr {
             UP(v) => {
                 for i in 0..v {
                     curr_x += 1;
-
-                    let current = grid[curr_x as usize][curr_y as usize];
-                    match current {
-                        GridPoints::CROSS(cid) => {
-                            if cid == id {
-                                grid[curr_x as usize][curr_y as usize] = GridPoints::CROSS(id);
-                            } else {
-                                grid[curr_x as usize][curr_y as usize] = GridPoints::CROSSOTHER;
-                            }
-                        }
-                        GridPoints::INSTRORIGIN(cid) => {
-                            if cid == id {
-                                grid[curr_x as usize][curr_y as usize] = GridPoints::CROSS(id);
-                            } else {
-                                grid[curr_x as usize][curr_y as usize] = GridPoints::CROSSOTHER;
-                            }
-                        }
-                        GridPoints::INSTR(cid) => {
-                            if cid == id {
-                                grid[curr_x as usize][curr_y as usize] = GridPoints::CROSS(id);
-                            } else {
-                                grid[curr_x as usize][curr_y as usize] = GridPoints::CROSSOTHER;
-                            }
-                        }
-                        GridPoints::EMPTY => {
-                            grid[curr_x as usize][curr_y as usize] = GridPoints::INSTR(id);
-                        }
-                        _ => {}
-                    }
+                    apply_grid_i(grid, id, pc, curr_x, curr_y);
+                    pc += 1;
                 }
             }
             Direction::DOWN(v) => {
                 for i in 0..v {
                     curr_x -= 1;
-
-                    let current = grid[curr_x as usize][curr_y as usize];
-                    match current {
-                        GridPoints::CROSS(cid) => {
-                            if cid == id {
-                                grid[curr_x as usize][curr_y as usize] = GridPoints::CROSS(id);
-                            } else {
-                                grid[curr_x as usize][curr_y as usize] = GridPoints::CROSSOTHER;
-                            }
-                        }
-                        GridPoints::INSTRORIGIN(cid) => {
-                            if cid == id {
-                                grid[curr_x as usize][curr_y as usize] = GridPoints::CROSS(id);
-                            } else {
-                                grid[curr_x as usize][curr_y as usize] = GridPoints::CROSSOTHER;
-                            }
-                        }
-                        GridPoints::INSTR(cid) => {
-                            if cid == id {
-                                grid[curr_x as usize][curr_y as usize] = GridPoints::CROSS(id);
-                            } else {
-                                grid[curr_x as usize][curr_y as usize] = GridPoints::CROSSOTHER;
-                            }
-                        }
-                        GridPoints::EMPTY => {
-                            grid[curr_x as usize][curr_y as usize] = GridPoints::INSTR(id);
-                        }
-                        _ => {}
-                    }
+                    apply_grid_i(grid, id, pc, curr_x, curr_y);
+                    pc += 1;
                 }
             }
             Direction::LEFT(v) => {
                 for i in 0..v {
                     curr_y -= 1;
-
-                    let current = grid[curr_x as usize][curr_y as usize];
-                    match current {
-                        GridPoints::CROSS(cid) => {
-                            if cid == id {
-                                grid[curr_x as usize][curr_y as usize] = GridPoints::CROSS(id);
-                            } else {
-                                grid[curr_x as usize][curr_y as usize] = GridPoints::CROSSOTHER;
-                            }
-                        }
-                        GridPoints::INSTRORIGIN(cid) => {
-                            if cid == id {
-                                grid[curr_x as usize][curr_y as usize] = GridPoints::CROSS(id);
-                            } else {
-                                grid[curr_x as usize][curr_y as usize] = GridPoints::CROSSOTHER;
-                            }
-                        }
-                        GridPoints::INSTR(cid) => {
-                            if cid == id {
-                                grid[curr_x as usize][curr_y as usize] = GridPoints::CROSS(id);
-                            } else {
-                                grid[curr_x as usize][curr_y as usize] = GridPoints::CROSSOTHER;
-                            }
-                        }
-                        GridPoints::EMPTY => {
-                            grid[curr_x as usize][curr_y as usize] = GridPoints::INSTR(id);
-                        }
-                        _ => {}
-                    }
+                    apply_grid_i(grid, id, pc, curr_x, curr_y);
+                    pc += 1;
                 }
             }
             Direction::RIGHT(v) => {
                 for i in 0..v {
                     curr_y += 1;
-
-                    let current = grid[curr_x as usize][curr_y as usize];
-                    match current {
-                        GridPoints::CROSS(cid) => {
-                            if cid == id {
-                                grid[curr_x as usize][curr_y as usize] = GridPoints::CROSS(id);
-                            } else {
-                                grid[curr_x as usize][curr_y as usize] = GridPoints::CROSSOTHER;
-                            }
-                        }
-                        GridPoints::INSTRORIGIN(cid) => {
-                            if cid == id {
-                                grid[curr_x as usize][curr_y as usize] = GridPoints::CROSS(id);
-                            } else {
-                                grid[curr_x as usize][curr_y as usize] = GridPoints::CROSSOTHER;
-                            }
-                        }
-                        GridPoints::INSTR(cid) => {
-                            if cid == id {
-                                grid[curr_x as usize][curr_y as usize] = GridPoints::CROSS(id);
-                            } else {
-                                grid[curr_x as usize][curr_y as usize] = GridPoints::CROSSOTHER;
-                            }
-                        }
-                        GridPoints::EMPTY => {
-                            grid[curr_x as usize][curr_y as usize] = GridPoints::INSTR(id);
-                        }
-                        _ => {}
-                    }
+                    apply_grid_i(grid, id, pc, curr_x, curr_y);
+                    pc += 1;
                 }
             }
         }
@@ -331,27 +283,27 @@ fn grid_print(grid: &Vec<Vec<GridPoints>>) {
             match col {
                 GridPoints::START => {
                     //print!("O ");
-                    b_buff.append(&mut "O".as_bytes().to_vec());
+                    b_buff.append(&mut "O\t\t".as_bytes().to_vec());
                 }
                 GridPoints::EMPTY => {
                     //print!(". ");
-                    b_buff.append(&mut ".".as_bytes().to_vec());
+                    b_buff.append(&mut ".\t\t".as_bytes().to_vec());
                 }
-                GridPoints::CROSS(v) => {
+                GridPoints::CROSS(v, pc) => {
                     //print!("X ");
-                    b_buff.append(&mut "*".as_bytes().to_vec());
+                    b_buff.append(&mut "*\t\t".as_bytes().to_vec());
                 }
-                GridPoints::INSTRORIGIN(v) => {
+                GridPoints::INSTRORIGIN(v, pc) => {
                     //print!("+ ");
-                    b_buff.append(&mut "+".as_bytes().to_vec());
+                    b_buff.append(&mut "+\t\t".as_bytes().to_vec());
                 }
-                GridPoints::INSTR(v) => {
+                GridPoints::INSTR(v, pc) => {
                     //print!("* ");
                     //b_buff.append(&mut "* ".as_bytes().to_vec());
-                    b_buff.append(&mut format!("{}", v).as_bytes().to_vec());
+                    b_buff.append(&mut format!("{} [{}]\t", v, pc).as_bytes().to_vec());
                 }
-                GridPoints::CROSSOTHER => {
-                    b_buff.append(&mut "X".as_bytes().to_vec());
+                GridPoints::CROSSOTHER(pc0,pc1) => {
+                    b_buff.append(&mut "X\t\t".as_bytes().to_vec());
                 }
             }
         }
