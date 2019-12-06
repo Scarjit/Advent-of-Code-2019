@@ -691,5 +691,14 @@ def solve_day_5():
         print(test_programm.codes)
 
 
+class Day_6():
+    def __init__(self):
+        pass
+
+
+def solve_day_6():
+    pass
+
+
 if __name__ == '__main__':
     solve_day_5()
