@@ -556,7 +556,7 @@ class Day_5(Day_2):
 
             def jump_if_true(boolean, target):
                 if boolean != 0:
-                    return False,  target
+                    return False, target
                 else:
                     return True, 3
 
@@ -571,7 +571,7 @@ class Day_5(Day_2):
                     self.codes[output_index] = 1
                 else:
                     self.codes[output_index] = 0
-                return True ,4
+                return True, 4
 
             def equal(first_input, second_input, output_index):
                 if first_input == second_input:
@@ -579,6 +579,7 @@ class Day_5(Day_2):
                 else:
                     self.codes[output_index] = 0
                 return True, 4
+
             def halt():
                 return False, -1
 
@@ -611,9 +612,9 @@ class Day_5(Day_2):
                 modes[_i] = digit
             params = [0] * n_params
             for _i in range(input_params[operation]):  # input parameters
-                #print("input param ", _i, "of", input_params[operation])
+                # print("input param ", _i, "of", input_params[operation])
                 if modes[_i] == 0:  # adds value of register to params
-                    #print(self.codes[position+1 + _i], self.codes[position + _i])
+                    # print(self.codes[position+1 + _i], self.codes[position + _i])
                     params[_i] = self.codes[self.codes[position + _i + 1]]
                 elif modes[_i] == 1:
                     params[_i] = self.codes[position + _i + 1]
@@ -621,7 +622,7 @@ class Day_5(Day_2):
                     raise Exception("invalid opcode", op_code, operation, "at", position)
             for _i in range(output_params[operation]):
                 params[input_params[operation] + _i] = self.codes[position + input_params[operation] + _i + 1]
-            #print("modes = ",modes," operation = ", operation," parameters = ", params)
+            # print("modes = ",modes," operation = ", operation," parameters = ", params)
             return {1: addition,
                     2: multiplication,
                     3: my_in,
@@ -650,9 +651,9 @@ class Day_5(Day_2):
 
 
 def solve_day_5():
-    test_programm = Day_5([3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,
-1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104,
-999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99])
+    test_programm = Day_5([3, 21, 1008, 21, 8, 20, 1005, 20, 22, 107, 8, 21, 20, 1006, 20, 31,
+                           1106, 0, 36, 98, 0, 0, 1002, 21, 125, 20, 4, 20, 1105, 1, 46, 104,
+                           999, 1105, 1, 46, 1101, 1000, 1, 20, 4, 20, 1105, 1, 46, 98, 99])
     test_programm = Day_5(
         [3, 225, 1, 225, 6, 6, 1100, 1, 238, 225, 104, 0, 1002, 43, 69, 224, 101, -483, 224, 224, 4, 224, 1002, 223, 8,
          223, 1001, 224, 5, 224, 1, 224, 223, 223, 1101, 67, 60, 225, 1102, 5, 59, 225, 1101, 7, 16, 225, 1102, 49, 72,
