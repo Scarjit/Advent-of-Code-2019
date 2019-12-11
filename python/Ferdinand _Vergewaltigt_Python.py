@@ -28,10 +28,10 @@ if __name__ == '__main__':
     green_list_y = []
     blue_list_x = []
     blue_list_y = []
-    UPPER_BOUNDARY = 10
-    LOWER_BOUNDARY = -10
-    STEP_SIZE = 0.01
-    RADIUS = 2
+    UPPER_BOUNDARY = 100
+    LOWER_BOUNDARY = -100
+    STEP_SIZE = 0.1
+    RADIUS = 1
 
     for i in np.arange(LOWER_BOUNDARY, UPPER_BOUNDARY, STEP_SIZE):
         for i2 in np.arange(LOWER_BOUNDARY, UPPER_BOUNDARY, STEP_SIZE):
