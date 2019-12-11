@@ -1,6 +1,6 @@
 import time
 import copy
-
+import itertools
 import math
 
 
@@ -150,8 +150,13 @@ def solve_day_1():
 
 
 class Day_2:
-    def __init__(self, codes):
+    def __init__(self, codes, automated_input=False, automated_params=None):
         self.codes = codes
+        self.automated_input = automated_input
+        if automated_params is None:
+            self.automated_parameters = []
+        else:
+            self.automated_parameters: list = automated_params
         self.initial_codes = copy.deepcopy(codes)
 
     def reset_codes(self):
@@ -530,8 +535,8 @@ def solve_day_4():
 
 class Day_5(Day_2):
 
-    def execute_codes(self):
-        def execute_from_position(position):
+    def execute_codes(self, start_position=0):
+        def execute_from_position(position, input_number=[0], o=[]):
             def get_operation(full_operation_code):
                 _operation = full_operation_code % 100
                 _op_code = int(full_operation_code / 100)
@@ -547,11 +552,22 @@ class Day_5(Day_2):
                 return True, 4
 
             def my_in(index_for_input):
-                self.codes[index_for_input] = int(input("enter input\n"))
+                if not self.automated_input:
+                    self.codes[index_for_input] = int(input("enter input\n"))
+                else:
+                    # print(self.automated_parameters)
+                    if len(self.automated_parameters) <= input_number[0]:
+                        raise Exception("expecting more inputs at position =", position, "last_outputs = ", outputs)
+                    self.codes[index_for_input] = int(self.automated_parameters[input_number[0]])
+
+                    input_number[0] += 1
                 return True, 2
 
             def my_out(output):
-                print("output = ", output)
+                if self.automated_input:
+                    o.append(output)
+                else:
+                    print("output = ", output)
                 return True, 2
 
             def jump_if_true(boolean, target):
@@ -633,12 +649,16 @@ class Day_5(Day_2):
                     8: equal,
                     99: halt}[operation](*params)
 
-        start_position = 0
+        outputs = []
         current_position = start_position
-
+        in_number = [0]
         while True:
             # print(self.codes)
-            continue_execution, increment = execute_from_position(current_position)
+            if not self.automated_input:
+                continue_execution, increment = execute_from_position(current_position)
+            else:
+                continue_execution, increment = execute_from_position(current_position, input_number=in_number,
+                                                                      o=outputs)
             current_position += increment
             # print(continue_execution, increment,current_position)
             # print(current_position)
@@ -649,12 +669,16 @@ class Day_5(Day_2):
                 else:
                     current_position = increment
 
+        if self.automated_input:
+            if len(self.automated_parameters) != in_number[0]:
+                raise Exception("Unused input")
+            return outputs
+
 
 def solve_day_5():
-    test_programm = Day_5([3, 21, 1008, 21, 8, 20, 1005, 20, 22, 107, 8, 21, 20, 1006, 20, 31,
-                           1106, 0, 36, 98, 0, 0, 1002, 21, 125, 20, 4, 20, 1105, 1, 46, 104,
-                           999, 1105, 1, 46, 1101, 1000, 1, 20, 4, 20, 1105, 1, 46, 98, 99])
-    test_programm = Day_5(
+    test_programm = Day_5([3, 26, 1001, 26, -4, 26, 3, 27, 1002, 27, 2, 27, 1, 27, 26,
+                           27, 4, 27, 1001, 28, -1, 28, 1005, 28, 6, 99, 0, 0, 5])
+    test_programm2 = Day_5(
         [3, 225, 1, 225, 6, 6, 1100, 1, 238, 225, 104, 0, 1002, 43, 69, 224, 101, -483, 224, 224, 4, 224, 1002, 223, 8,
          223, 1001, 224, 5, 224, 1, 224, 223, 223, 1101, 67, 60, 225, 1102, 5, 59, 225, 1101, 7, 16, 225, 1102, 49, 72,
          225, 101, 93, 39, 224, 101, -98, 224, 224, 4, 224, 102, 8, 223, 223, 1001, 224, 6, 224, 1, 224, 223, 223, 1102,
@@ -3009,5 +3033,81 @@ I)SAN""")'''
     print(len(starmap.get_distance()))
 
 
+class Day_7():
+    def __init__(self, params):
+        self.computer_program = Day_5([3,8,1001,8,10,8,105,1,0,0,21,38,55,72,93,118,199,280,361,442,99999,3,9,1001,9,2,9,1002,9,5,9,101,4,9,9,4,9,99,3,9,1002,9,3,9,1001,9,5,9,1002,9,4,9,4,9,99,3,9,101,4,9,9,1002,9,3,9,1001,9,4,9,4,9,99,3,9,1002,9,4,9,1001,9,4,9,102,5,9,9,1001,9,4,9,4,9,99,3,9,101,3,9,9,1002,9,3,9,1001,9,3,9,102,5,9,9,101,4,9,9,4,9,99,3,9,101,1,9,9,4,9,3,9,1001,9,1,9,4,9,3,9,102,2,9,9,4,9,3,9,101,2,9,9,4,9,3,9,1001,9,1,9,4,9,3,9,102,2,9,9,4,9,3,9,1001,9,1,9,4,9,3,9,102,2,9,9,4,9,3,9,102,2,9,9,4,9,3,9,1002,9,2,9,4,9,99,3,9,1001,9,1,9,4,9,3,9,1002,9,2,9,4,9,3,9,1001,9,2,9,4,9,3,9,1002,9,2,9,4,9,3,9,101,2,9,9,4,9,3,9,102,2,9,9,4,9,3,9,102,2,9,9,4,9,3,9,102,2,9,9,4,9,3,9,101,1,9,9,4,9,3,9,101,1,9,9,4,9,99,3,9,101,2,9,9,4,9,3,9,101,1,9,9,4,9,3,9,101,1,9,9,4,9,3,9,102,2,9,9,4,9,3,9,1002,9,2,9,4,9,3,9,101,2,9,9,4,9,3,9,1002,9,2,9,4,9,3,9,1001,9,2,9,4,9,3,9,1002,9,2,9,4,9,3,9,101,1,9,9,4,9,99,3,9,1001,9,1,9,4,9,3,9,1002,9,2,9,4,9,3,9,1001,9,1,9,4,9,3,9,1001,9,2,9,4,9,3,9,102,2,9,9,4,9,3,9,1001,9,1,9,4,9,3,9,1002,9,2,9,4,9,3,9,1001,9,2,9,4,9,3,9,1001,9,2,9,4,9,3,9,102,2,9,9,4,9,99,3,9,101,1,9,9,4,9,3,9,1002,9,2,9,4,9,3,9,101,2,9,9,4,9,3,9,1002,9,2,9,4,9,3,9,101,2,9,9,4,9,3,9,1002,9,2,9,4,9,3,9,101,1,9,9,4,9,3,9,101,2,9,9,4,9,3,9,1002,9,2,9,4,9,3,9,101,1,9,9,4,9,99], automated_input=True,
+            automated_params=params)
+        self.computer_program_test= Day_5(
+            [3, 52, 1001, 52, -5, 52, 3, 53, 1, 52, 56, 54, 1007, 54, 5, 55, 1005, 55, 26, 1001, 54,
+             -5, 54, 1105, 1, 12, 1, 53, 54, 53, 1008, 54, 0, 55, 1001, 55, 1, 55, 2, 53, 55, 53, 4,
+             53, 1001, 56, -1, 56, 1005, 56, 6, 99, 0, 0, 0, 0, 10], automated_input=True,
+            automated_params=params)
+    def execute_program(self, params=None, start_position=0):
+        if params is not None:
+            self.computer_program.automated_parameters = params
+        return self.computer_program.execute_codes(start_position)
+
+
+def solve_day_7():
+    def amplifier_cascade(phase_settings, initial_input=0):
+        amplifier_stage = Day_7([0, 0])
+        stage_output = [initial_input]
+        for setting in phase_settings:
+            stage_output = amplifier_stage.execute_program([setting, stage_output[0]])
+        return stage_output
+
+    def amplifier_loop(phase_settings, initial_input=0):
+        n_stages = len(phase_settings)
+        amplifier_stages: list[Day_7] = [Day_7([0, 0])]
+        for _ in range(n_stages - 1):
+            amplifier_stages.append(copy.deepcopy(amplifier_stages[0]))
+        stage_output = [[initial_input]] * n_stages
+        current_positions = [0] * n_stages
+        _i = 0
+        completed_stages = 0
+        while True:
+            try:
+                try:
+                    if _i < n_stages:
+                        # print("initialising stage = ", _i%n_stages)
+                        stage_output[_i % n_stages] = amplifier_stages[_i % n_stages].execute_program(
+                            [phase_settings[_i % n_stages], stage_output[(_i % n_stages) - 1][0]],
+                            current_positions[_i % n_stages])
+                    else:
+                        stage_output[_i % n_stages] = amplifier_stages[_i % n_stages].execute_program(
+                            [stage_output[(_i % n_stages) - 1][0]],
+                            current_positions[_i % n_stages])
+                        completed_stages += 1
+                        if completed_stages == n_stages:
+                            break
+                except Exception as _e:
+                    if _e.args[0] == 'expecting more inputs at position =':
+                        current_positions[_i % n_stages] = _e.args[1]
+                        stage_output[_i % n_stages] = _e.args[3]
+                    else:
+                        raise _e
+
+                _i += 1
+            except Exception as _e:
+                if _e.args[0] == "Unused input":
+                    print("feedback_loop_completed")
+                    break
+                else:
+                    raise _e
+        return stage_output[-1]
+
+    n_amplifiers = 5
+    phase_combs = itertools.permutations(range(n_amplifiers, n_amplifiers + n_amplifiers), n_amplifiers)
+    max_output = 0
+    # phase_combs = [[9,7,8,5,6]]
+    for combination in phase_combs:
+        output = amplifier_loop(combination)
+
+        if output[0] > max_output:
+            max_output = output[0]
+            print("combination : ", combination, " resulted in ", output)
+    print("max output is = ", max_output)
+
+
 if __name__ == '__main__':
-    solve_day_6()
+    solve_day_7()
